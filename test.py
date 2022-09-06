@@ -30,46 +30,58 @@ def gather_filenames():
 
     return gather_recursive_files("dummy-data")
 
-def stream_loader(filename):
-    stream = None
-    if os.path.isfile(filename):
-        with open(filename, 'r') as f:
-            stream = io.StringIO(f.read())
-    return stream
+class StreamLoader:
+    def __init__(self):
+        pass
 
-def stream_parser(stream):
-    if stream is None:
-        return None
+    def func(self, filename):
+        stream = None
+        if os.path.isfile(filename):
+            with open(filename, 'r') as f:
+                stream = io.StringIO(f.read())
+        return stream
 
-    line = stream.readline()
-    if len(line) == 0:
-        return None
+class StreamParser:
+    def __init__(self):
+        pass
 
-    data = list()
-    vals = line.split()
-    for v in vals:
-       data.append(int(v))
-    return data
+    def func(self, stream):
+        if stream is None:
+            return None
 
-def batch_generator(data_list):
-    x = list()
-    y = list()
+        line = stream.readline()
+        if len(line) == 0:
+            return None
 
-    for data in data_list:
-        x.append(data[0])
-        y.append(data[1])
+        data = list()
+        vals = line.split()
+        for v in vals:
+           data.append(int(v))
+        return data
 
-    batch = x, y
-    return batch
+class BatchGenerator:
+    def __init__(self):
+        pass
+
+    def func(self, data_list):
+        x = list()
+        y = list()
+
+        for data in data_list:
+            x.append(data[0])
+            y.append(data[1])
+
+        batch = x, y
+        return batch
 
 if __name__ == "__main__":
     gen_dummy_data()
 
     loader = ll.LazyLoader(
         filenames = gather_filenames(),
-        stream_loader = stream_loader,
-        stream_parser = stream_parser,
-        batch_generator = batch_generator,
+        stream_loader = StreamLoader,
+        stream_parser = StreamParser,
+        batch_generator = BatchGenerator,
         num_workers = 1,
         buffer_size = 512,
         batch_size = 32

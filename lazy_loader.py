@@ -24,8 +24,8 @@ class DataLoader:
         self.done = filenames
         self.tasks = list()
 
-        self.parser = stream_parser
-        self.loader = stream_loader
+        self.parser = stream_parser()
+        self.loader = stream_loader()
         self.queue = data_queue
         self.stream = None
 
@@ -43,14 +43,14 @@ class DataLoader:
         filename = self.tasks.pop()
         self.done.append(filename)
 
-        return self.loader(filename)
+        return self.loader.func(filename)
 
     def next(self):
         while True:
             if self.stream is None:
                 self.stream = self.__open_new_stream()
 
-            data = self.parser(self.stream)
+            data = self.parser.func(self.stream)
 
             if data is None:
                 self.stream = None
@@ -99,6 +99,7 @@ def __load_from_files(config, data_queue):
 
 def __gather_batch(config, data_queue, batch_queue):
     shuf_buff = ShuffleBuffer(config.buffer_size)
+    batch_gen = config.batch_generator()
 
     while True:
         # fill the buffer until it is full
@@ -116,30 +117,17 @@ def __gather_batch(config, data_queue, batch_queue):
             if outs is not None:
                 data_list.append(outs)
 
-        batch = config.batch_generator(data_list)
+        batch = batch_gen.func(data_list)
         batch_queue.put(batch, block=True, timeout=None)
 
 def LazyLoader(*args, **kwargs):
     config = LoaderConfig()
 
-    """
-        stream_loader:
-            Input the file name and return stream. Return None if
-            there is no target file.
-
-        stream_parser:
-            Input the current data stream and return one data. Return
-            None if the data stream is end.
-
-        batch_generator:
-            Input data list and return batches.
-    """
-
     config.filenames = kwargs.get("filenames", list())
     config.stream_loader = kwargs.get("stream_loader", None)
     config.stream_parser = kwargs.get("stream_parser", None)
     config.batch_generator = kwargs.get("batch_generator",None)
-    config.down_sample_rate = kwargs.get("down_sample_rate", 16)
+    config.down_sample_rate = kwargs.get("down_sample_rate",  0)
     config.num_workers = kwargs.get("num_workers", 0)
     config.buffer_size = kwargs.get("buffer_size", 0)
     config.batch_size = kwargs.get("batch_size", 0)
