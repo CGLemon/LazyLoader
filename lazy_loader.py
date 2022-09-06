@@ -140,11 +140,12 @@ def LazyLoader(*args, **kwargs):
         return None
 
     data_readers = list()
-    batch_reader,  batch_writer = mp.Pipe(duplex=False)
+    batch_reader, batch_writer = mp.Pipe(duplex=False)
 
     for _ in range(config.num_workers):
         data_reader, data_writer = mp.Pipe(duplex=False)
         data_readers.append(data_reader)
+
         mp.Process(
             target=__load_from_files,
             args=(config, data_writer),

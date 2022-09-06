@@ -86,6 +86,7 @@ if __name__ == "__main__":
         stream_loader = sl,
         stream_parser = sp,
         batch_generator = bg,
+        down_sample_rate = 16,
         num_workers = 1,
         buffer_size = 512,
         batch_size = 32
