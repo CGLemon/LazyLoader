@@ -97,7 +97,7 @@ def __load_from_files(config, data_queue):
     while True:
         loader.next()
 
-def __gather_batch(config, data_queue, batch_queue):
+def __gather_batch(config, data_queue, batch_writer):
     shuf_buff = ShuffleBuffer(config.buffer_size)
     batch_gen = config.batch_generator
 
@@ -118,7 +118,7 @@ def __gather_batch(config, data_queue, batch_queue):
                 data_list.append(outs)
 
         batch = batch_gen.func(data_list)
-        batch_queue.put(batch, block=True, timeout=None)
+        batch_writer.send(batch)
 
 def LazyLoader(*args, **kwargs):
     config = LoaderConfig()
@@ -132,14 +132,15 @@ def LazyLoader(*args, **kwargs):
     config.buffer_size = kwargs.get("buffer_size", 0)
     config.batch_size = kwargs.get("batch_size", 0)
     data_queue_factor = kwargs.get("data_queue_factor", 16)
-    batch_queue_factor = kwargs.get("batch_queue_factor", 16)
 
     if not config.valid():
         return None
 
+    # TODO : Use the mp.Pipe instead of data_queue.
     data_que_size = data_queue_factor * config.batch_size * config.num_workers
     data_queue = mp.Queue(maxsize=data_que_size)
-    batch_queue = mp.Queue(maxsize=batch_queue_factor)
+
+    reader, write = mp.Pipe(duplex=False)
 
     for _ in range(config.num_workers):
         # N workers read the data from files and write the data
@@ -153,10 +154,10 @@ def LazyLoader(*args, **kwargs):
     # One worker read the data from queue.
     mp.Process(
         target=__gather_batch,
-        args=(config, data_queue, batch_queue),
+        args=(config, data_queue, write),
         daemon=True
     ).start()
 
     while True:
-        batch = batch_queue.get(block=True, timeout=None)
+        batch = reader.recv()
         yield batch
