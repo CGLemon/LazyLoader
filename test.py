@@ -77,11 +77,15 @@ class BatchGenerator:
 if __name__ == "__main__":
     gen_dummy_data()
 
+    sl = StreamLoader()
+    sp = StreamParser()
+    bg = BatchGenerator()
+
     loader = ll.LazyLoader(
         filenames = gather_filenames(),
-        stream_loader = StreamLoader,
-        stream_parser = StreamParser,
-        batch_generator = BatchGenerator,
+        stream_loader = sl,
+        stream_parser = sp,
+        batch_generator = bg,
         num_workers = 1,
         buffer_size = 512,
         batch_size = 32

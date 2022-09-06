@@ -24,8 +24,8 @@ class DataLoader:
         self.done = filenames
         self.tasks = list()
 
-        self.parser = stream_parser()
-        self.loader = stream_loader()
+        self.parser = stream_parser
+        self.loader = stream_loader
         self.queue = data_queue
         self.stream = None
 
@@ -99,7 +99,7 @@ def __load_from_files(config, data_queue):
 
 def __gather_batch(config, data_queue, batch_queue):
     shuf_buff = ShuffleBuffer(config.buffer_size)
-    batch_gen = config.batch_generator()
+    batch_gen = config.batch_generator
 
     while True:
         # fill the buffer until it is full
