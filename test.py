@@ -1,5 +1,5 @@
 import os, random, glob, io
-import lazy_loader as ll
+from lazy_loader import LazyLoader
 
 def gen_dummy_data():
     dirname = "dummy-data"
@@ -81,7 +81,7 @@ if __name__ == "__main__":
     sp = StreamParser()
     bg = BatchGenerator()
 
-    loader = ll.LazyLoader(
+    loader = LazyLoader(
         filenames = gather_filenames(),
         stream_loader = sl,
         stream_parser = sp,

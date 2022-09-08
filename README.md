@@ -14,7 +14,7 @@ loader = LazyLoader(
     stream_loader = stream_loader,
     stream_parser = stream_parser,
     batch_generator = batch_generator,
-    down_sample_rate = 16,
+    down_sample_rate = 16, # 有 1/N 的機率採樣資料，越大則資料擴散度越好
     num_workers = 4,
     buffer_size = 32 * 1024, # 緩衝大小，越大能提供越好的亂度
     batch_size = 256
@@ -24,7 +24,7 @@ for _ in range(10000):
     batch = next(loader) # infinite loader # 可以一直拿取下一份 batch
 ```
 
-而 ```StreamLoader``` 、 ```StreamParser``` 和 ```BatchGenerator``` 的間單實做為。
+而 ```StreamLoader``` 、```StreamParser``` 和 ```BatchGenerator``` 的間單實做為。
 
 ```python
 class StreamLoader:
@@ -33,7 +33,8 @@ class StreamLoader:
 
     def func(self, filename):
         
-        # 輸入檔案的名稱，載入檔案並回傳 stream
+        # 輸入檔案的名稱，載入檔案並回傳 stream，
+        # 如果檔案不存在，則回傳 None
 
         return stream
 
@@ -44,8 +45,8 @@ class StreamParser:
 
     def func(self, stream):
 
-        # 輸入檔案的 stream ，回傳 stream 內的一份資料，
-        # 如果 stream 已經尾，則回傳 None
+        # 輸入檔案的 stream ，解析 stream 內的一份資料並回傳，
+        # 如果 stream 已經結束無法解析資料，則回傳 None
 
         return data
 
@@ -56,7 +57,7 @@ class BatchGenerator:
 
     def func(self, data_list):
 
-        # 輸入資料的 list，回傳串接好的 batch 資料
+        # 輸入是資料的 list，回傳串接好的 batch 資料
 
         return batch
 ```
