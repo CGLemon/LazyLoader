@@ -13,6 +13,9 @@ class ShuffleBuffer:
 
         if size > 4:
             i = random.randint(0, size-1)
+
+            # Apply Fisher-Yates shuffle algorithm. Efficiently shuffle
+            # the random buffer.
             self.__buf[i], item = item, self.__buf[i]
 
         if size < self.buf_size:
@@ -54,10 +57,12 @@ class DataLoader:
             data = self.parser.func(self.stream)
 
             if data is None:
+                # The stream is end. Open the new stream next time.
                 self.stream = None
                 continue
 
             if self.rate > 1:
+                # Apply the down-sample.
                 if random.randint(0, self.rate-1) != 0:
                     continue
 
@@ -87,6 +92,10 @@ class LoaderConfig:
         return True
 
 def __load_from_files(config, data_writer):
+    # Load the data from disk. Recommand to design a heavy stream parser instead 
+    # of heavy batch generator. It is because that there are N workers execute the 
+    # parser, only one worker execute generator.
+
     loader = DataLoader(
                  filenames = config.filenames,
                  data_writer = data_writer,
@@ -104,13 +113,15 @@ def __gather_batch(config, data_readers, batch_writer):
 
     stop = False
     while not stop:
-        # fill the buffer until it is full
+        # Fill the buffer until it is full.
         for r in data_readers:
             item = r.recv()
             outs = shuf_buff.insert_item_and_pop(item)
             if outs is not None:
                 stop = True
 
+    # Now, start to prepare the batch. It significantly improve
+    # the loader performanc.
     while True:
         data_list = list()
 
@@ -121,6 +132,7 @@ def __gather_batch(config, data_readers, batch_writer):
                 if outs is not None:
                     data_list.append(outs)
 
+        # Send the batch.
         batch = batch_gen.func(data_list)
         batch_writer.send(batch)
 
@@ -137,12 +149,14 @@ def LazyLoader(*args, **kwargs):
     config.batch_size = kwargs.get("batch_size", 0)
 
     if not config.valid():
+        print("Config is invalid. Please check your setting.")
         return None
 
     data_readers = list()
     batch_reader, batch_writer = mp.Pipe(duplex=False)
 
     for _ in range(config.num_workers):
+        # One process uses one pipe.
         data_reader, data_writer = mp.Pipe(duplex=False)
         data_readers.append(data_reader)
 
@@ -153,11 +167,15 @@ def LazyLoader(*args, **kwargs):
         ).start()
         data_writer.close()
 
+    # TODO: Safely terminate the thread.
     threading.Thread(
         target=__gather_batch,
         args=(config, data_readers, batch_writer),
         daemon=True
     ).start()
+
+    # Do not close it because the thread shared the same
+    # writer.
     # batch_writer.close()
 
     while True:
