@@ -11,9 +11,9 @@ from lazy_loader import LazyLoader
 
 loader = LazyLoader(
     filenames = ['file1', 'file2', 'file3'], # 切割資料的檔案名稱
-    stream_loader = stream_loader,           # 載入器實做
-    stream_parser = stream_parser,           # 解析器實做
-    batch_generator = batch_generator,       # 生產器實做
+    stream_loader = stream_loader,           # 實做的載入器
+    stream_parser = stream_parser,           # 實做的解析器
+    batch_generator = batch_generator,       # 實做的生產器
     down_sample_rate = 16,                   # 有 1/N 的機率採樣資料，越大則資料擴散度越好
     num_workers = 4,                         # 載入器數目，越多載入速度越快
     buffer_size = 32 * 1024,                 # 緩衝大小，越大能提供越好的亂度
