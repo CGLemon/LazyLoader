@@ -75,12 +75,15 @@ class BatchGenerator:
         return batch
 
 if __name__ == "__main__":
+    # Create sample data.
     gen_dummy_data()
 
+    # Implement the loader, parser and generator.
     sl = StreamLoader()
     sp = StreamParser()
     bg = BatchGenerator()
 
+    # Create the lazy loader.
     loader = LazyLoader(
         filenames = gather_filenames(),
         stream_loader = sl,
@@ -91,6 +94,8 @@ if __name__ == "__main__":
         buffer_size = 512,
         batch_size = 32
     )
+
+    # gather batch
     for _ in range(10):
         batch = next(loader)
         print(batch)

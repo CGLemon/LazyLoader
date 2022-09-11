@@ -5,8 +5,8 @@ import random
 class ShuffleBuffer:
     def __init__(self, buf_size):
         self.__buf = list()
-        self.buf_size = buf_size
-        assert self.buf_size > 4, ""
+        self.__max_buf_size = buf_size
+        assert self.__max_buf_size >= 1, "Buffer size must be greater than zero."
 
     def insert_item_and_pop(self, item):
         size = len(self.__buf)
@@ -18,7 +18,7 @@ class ShuffleBuffer:
             # the random buffer.
             self.__buf[i], item = item, self.__buf[i]
 
-        if size < self.buf_size:
+        if size < self.__max_buf_size:
             self.__buf.append(item)
             return None
         return item
@@ -94,7 +94,7 @@ class LoaderConfig:
 def __load_from_files(config, data_writer):
     # Load the data from disk. Recommand to design a heavy stream parser instead 
     # of heavy batch generator. It is because that there are N workers execute the 
-    # parser, only one worker execute generator.
+    # parser function, only one worker executes generator function.
 
     loader = DataLoader(
                  filenames = config.filenames,
@@ -160,6 +160,7 @@ def LazyLoader(*args, **kwargs):
         data_reader, data_writer = mp.Pipe(duplex=False)
         data_readers.append(data_reader)
 
+        # Create one SMP process.
         mp.Process(
             target=__load_from_files,
             args=(config, data_writer),
@@ -174,7 +175,7 @@ def LazyLoader(*args, **kwargs):
         daemon=True
     ).start()
 
-    # Do not close it because the thread shared the same
+    # Do not close it because the thread and main thread share the same
     # writer.
     # batch_writer.close()
 
