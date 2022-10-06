@@ -115,10 +115,13 @@ def __gather_batch(config, data_readers, batch_writer):
     while not stop:
         # Fill the buffer until it is full.
         for r in data_readers:
-            item = r.recv()
-            outs = shuf_buff.insert_item_and_pop(item)
-            if outs is not None:
-                stop = True
+            try:
+                item = r.recv()
+                outs = shuf_buff.insert_item_and_pop(item)
+                if outs is not None:
+                    stop = True
+            except:
+                return
 
     # Now, start to prepare the batch. It significantly improve
     # the loader performanc.
@@ -127,10 +130,13 @@ def __gather_batch(config, data_readers, batch_writer):
 
         while len(data_list) < config.batch_size:
             for r in data_readers:
-                item = r.recv()
-                outs = shuf_buff.insert_item_and_pop(item)
-                if outs is not None:
-                    data_list.append(outs)
+                try:
+                    item = r.recv()
+                    outs = shuf_buff.insert_item_and_pop(item)
+                    if outs is not None:
+                        data_list.append(outs)
+                except:
+                    return
 
         # Send the batch.
         batch = batch_gen.func(data_list)
@@ -168,7 +174,6 @@ def LazyLoader(*args, **kwargs):
         ).start()
         data_writer.close()
 
-    # TODO: Safely terminate the thread.
     threading.Thread(
         target=__gather_batch,
         args=(config, data_readers, batch_writer),
