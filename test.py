@@ -6,6 +6,8 @@ def gen_dummy_data():
     if not os.path.isdir(dirname):
         os.mkdir(dirname)
 
+    print("write the sample data in the {} file...\n".format(dirname))
+
     for i in range(10):
         filename = os.path.join(dirname, "data_{}.txt".format(i+1))
         if not os.path.isfile(filename):
@@ -94,6 +96,9 @@ if __name__ == "__main__":
         buffer_size = 512,
         batch_size = 32
     )
+
+    # Wait for filling shuffle buffer. 
+    batch = next(loader)
 
     # gather batch
     for _ in range(10):
