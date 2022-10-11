@@ -23,7 +23,7 @@ loader = LazyLoader(
 for _ in range(10000):
     batch = next(loader) # 可以一直拿取下一份 batch
 
-程式結束可以自動釋放
+# 程式結束可以自動釋放
 ```
 
 而 ```StreamLoader``` 、```StreamParser``` 和 ```BatchGenerator``` 的實做界面為下。
@@ -63,3 +63,7 @@ class BatchGenerator:
 
         return batch
 ```
+
+## License
+
+沒有 License ，請自由的加入自己的專案中。
