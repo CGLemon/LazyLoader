@@ -67,3 +67,7 @@ class BatchGenerator:
 ## License
 
 沒有 License ，請自由的加入自己的專案中。
+
+## TODO
+
+* 支援 LMDB ？
