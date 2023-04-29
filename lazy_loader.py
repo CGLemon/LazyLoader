@@ -79,6 +79,7 @@ class LoaderConfig:
         self.num_workers = 0
         self.buffer_size = 0
         self.batch_size = 0
+        self.flag = None
 
     def valid(self):
         if len(self.filenames) <= 0 or \
@@ -91,9 +92,29 @@ class LoaderConfig:
             return False
         return True
 
+class LoaderFlag:
+    NONE = 0
+    STOP = 1
+
+    def __init__(self):
+        self.flag = mp.Value("i", self.NONE)
+
+    def is_stop(self):
+        with self.flag.get_lock():
+            v = self.flag.value
+        return v == self.STOP
+
+    def reset_flag(self):
+        with self.flag.get_lock():
+            self.flag.value = self.NONE
+
+    def set_stop_flag(self):
+        with self.flag.get_lock():
+            self.flag.value = self.STOP
+
 def __load_from_files(config, data_writer):
     # Load the data from disk. Recommand to design a heavy stream parser instead 
-    # of heavy batch generator. It is because that there are N workers execute the 
+    # of heavy batch generator. It is because that N workers execute the 
     # parser function, only one worker executes generator function.
 
     loader = DataLoader(
@@ -105,6 +126,9 @@ def __load_from_files(config, data_writer):
              )
 
     while True:
+        if config.flag.is_stop():
+            data_writer.close()
+            break
         loader.next()
 
 def __gather_batch(config, data_readers, batch_writer):
@@ -126,6 +150,10 @@ def __gather_batch(config, data_readers, batch_writer):
     # Now, start to prepare the batch. It significantly improve
     # the loader performanc.
     while True:
+        if config.flag.is_stop():
+            batch_writer.close()
+            break
+
         data_list = list()
 
         while len(data_list) < config.batch_size:
@@ -156,6 +184,7 @@ def LazyLoader(*args, **kwargs):
     config.num_workers = kwargs.get("num_workers", 0)
     config.buffer_size = kwargs.get("buffer_size", 0)
     config.batch_size = kwargs.get("batch_size", 0)
+    config.flag = kwargs.get("flag", LoaderFlag())
 
     if not config.valid():
         print("Config is invalid. Please check your setting.")
@@ -188,5 +217,11 @@ def LazyLoader(*args, **kwargs):
     # batch_writer.close()
 
     while True:
-        batch = batch_reader.recv()
-        yield batch
+        if config.flag.is_stop():
+            batch_reader.close()
+            break
+        try:
+            batch = batch_reader.recv()
+            yield batch
+        except:
+            pass
