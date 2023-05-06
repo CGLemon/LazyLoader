@@ -4,22 +4,22 @@ import random
 
 class ShuffleBuffer:
     def __init__(self, buf_size):
-        self.__buf = list()
-        self.__max_buf_size = buf_size
-        assert self.__max_buf_size >= 1, "Buffer size must be greater than zero."
+        self._buf = list()
+        self._max_buf_size = buf_size
+        assert self._max_buf_size >= 1, "Buffer size must be greater than zero."
 
     def insert_item_and_pop(self, item):
-        size = len(self.__buf)
+        size = len(self._buf)
 
         if size > 4:
             i = random.randint(0, size-1)
 
             # Apply Fisher-Yates shuffle algorithm. Efficiently shuffle
             # the random buffer.
-            self.__buf[i], item = item, self.__buf[i]
+            self._buf[i], item = item, self._buf[i]
 
-        if size < self.__max_buf_size:
-            self.__buf.append(item)
+        if size < self._max_buf_size:
+            self._buf.append(item)
             return None
         return item
 
@@ -33,13 +33,13 @@ class DataLoader:
         self.writer = data_writer
         self.stream = None
 
-        # Use a random sample input data read. This helps improve the spread of
+        # Use a random sample input data reader. This helps improve the spread of
         # games in the shuffle buffer.
         self.rate = down_sample_rate
 
         assert len(filenames) != 0, ""
 
-    def __open_new_stream(self):
+    def _open_new_stream(self):
         if len(self.tasks) == 0:
             self.tasks, self.done = self.done, self.tasks
             random.shuffle(self.tasks)
@@ -52,7 +52,7 @@ class DataLoader:
     def next(self):
         while True:
             if self.stream is None:
-                self.stream = self.__open_new_stream()
+                self.stream = self._open_new_stream()
 
             data = self.parser.func(self.stream)
 
@@ -112,8 +112,8 @@ class LoaderFlag:
         with self.flag.get_lock():
             self.flag.value = self.STOP
 
-def __load_from_files(config, data_writer):
-    # Load the data from disk. Recommand to design a heavy stream parser instead 
+def _load_from_files(config, data_writer):
+    # Load the data from disk. Suggest to design a heavy stream parser instead 
     # of heavy batch generator. It is because that N workers execute the 
     # parser function, only one worker executes generator function.
 
@@ -131,7 +131,7 @@ def __load_from_files(config, data_writer):
             break
         loader.next()
 
-def __gather_batch(config, data_readers, batch_writer):
+def _gather_batch(config, data_readers, batch_writer):
     shuf_buff = ShuffleBuffer(config.buffer_size)
     batch_gen = config.batch_generator
 
@@ -200,14 +200,14 @@ def LazyLoader(*args, **kwargs):
 
         # Create one SMP process.
         mp.Process(
-            target=__load_from_files,
+            target=_load_from_files,
             args=(config, data_writer),
             daemon=True
         ).start()
         data_writer.close()
 
     threading.Thread(
-        target=__gather_batch,
+        target=_gather_batch,
         args=(config, data_readers, batch_writer),
         daemon=True
     ).start()
@@ -223,5 +223,5 @@ def LazyLoader(*args, **kwargs):
         try:
             batch = batch_reader.recv()
             yield batch
-        except:
+        except GeneratorExit:
             pass

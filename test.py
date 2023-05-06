@@ -1,5 +1,5 @@
-import os, random, glob, io
-from lazy_loader import LazyLoader
+import os, random, glob, io, time
+from lazy_loader import LazyLoader, LoaderFlag
 
 def gen_dummy_data():
     dirname = "dummy-data"
@@ -84,6 +84,7 @@ if __name__ == "__main__":
     sl = StreamLoader()
     sp = StreamParser()
     bg = BatchGenerator()
+    flag = LoaderFlag()
 
     # Create the lazy loader.
     loader = LazyLoader(
@@ -94,7 +95,8 @@ if __name__ == "__main__":
         down_sample_rate = 16,
         num_workers = 1,
         buffer_size = 512,
-        batch_size = 32
+        batch_size = 32,
+        flag = flag
     )
 
     # Wait for filling shuffle buffer. 
@@ -104,3 +106,4 @@ if __name__ == "__main__":
     for _ in range(10):
         batch = next(loader)
         print(batch)
+    flag.set_stop_flag()
