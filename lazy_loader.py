@@ -222,8 +222,13 @@ def LazyLoader(*args, **kwargs):
 
     while True:
         if config.flag.is_stop():
-            for p in proc_list:
-                p.join()
+            for idx, p in enumerate(proc_list):
+                while p.is_alive():
+                    try:
+                        _ = data_readers[idx].recv()
+                        continue
+                    except:
+                        pass
             t.join()
             batch_reader.close()
             return
