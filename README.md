@@ -18,12 +18,19 @@ loader = LazyLoader(
     num_workers = 4,                         # 載入器數目，越多載入速度越快
     buffer_size = 32 * 1024,                 # 緩衝大小，越大能提供越好的亂度，但需要的記憶體容量越大
     batch_size = 256                         # batch 大小
+    flag = flag                              # 傳遞停止的信號
 )
 
 for _ in range(10000):
     batch = next(loader) # 可以一直拿取下一份 batch
 
-# 程式結束可以自動釋放
+# 程式結束後，發送停止信號
+flag.set_stop_flag()
+try:
+    batch = next(loader)
+except StopIteration:
+    print("stop...")
+
 ```
 
 而 ```StreamLoader``` 、```StreamParser``` 和 ```BatchGenerator``` 的實做界面為下。
@@ -63,6 +70,8 @@ class BatchGenerator:
 
         return batch
 ```
+
+完整的範例請看 ```test.py```
 
 ## License
 

@@ -107,3 +107,7 @@ if __name__ == "__main__":
         batch = next(loader)
         print(batch)
     flag.set_stop_flag()
+    try:
+        batch = next(loader)
+    except StopIteration:
+        print("stop...")
